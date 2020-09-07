@@ -1,17 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import SocketIO from "socket.io-client";
 import ax from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
+
+const URL = "http://10.197.12.84:4000";
 
 function App() {
   const [qr, setQr] = useState<any>(null);
   const [socket, setSocket] = useState<SocketIOClient.Socket | null>(null);
 
-  const [orderId, setOrderId] = useState<string | null>(null);
+  // const [orderId, setOrderId] = useState<string | null>(null);
 
   const generateQr = async (orderId: string) => {
     const res = await ax.post(
-      "http://localhost:4000/api/v1/qr/generate",
+      `${URL}/api/v1/qr/generate`,
       {
         orderId,
       },
@@ -22,7 +26,11 @@ function App() {
   };
 
   const generateOrderId = async (): Promise<string> => {
-    const order = await ax.post("http://localhost:4000/api/v1/order/generate");
+    const order = await ax.post(`${URL}/api/v1/order/generate`, {
+      amount: 931.22,
+      currency: "981",
+      item: [{ id: 123 }],
+    });
     return order.data?.orderId;
   };
 
@@ -36,15 +44,36 @@ function App() {
 
       const qr = await generateQr(orderId);
 
-      const socket = SocketIO("http://localhost:4000", {});
+      const socket = SocketIO(`${URL}`, {});
       setSocket(socket);
 
       socket.emit("create-order", {
         orderId,
       });
 
-      socket.on(`ORDER_${orderId}`, (data: any) => {
+      socket.on(`ORDER_ID_${orderId}`, (data: any) => {
         console.log("IMAMO NESTO OD ORDERA", data);
+        if (data.type === "TRANSACTION_SUCCESSFULL") {
+          toast(`Order: ${data.orderId} successfull :)`, {
+            type: "success",
+            position: "bottom-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        } else {
+          toast(`Order: ${data.orderId} unsuccessfull :(`, {
+            position: "bottom-right",
+            type: "error",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        }
       });
 
       setQr(qr.data);
@@ -56,6 +85,7 @@ function App() {
   //tekPartTP59
   return (
     <div className="App">
+      <ToastContainer />
       <h1>Test</h1>
       <button onClick={() => initateCheckout()}>GENERATE QR</button>
       {qr && <img src={window.URL.createObjectURL(qr)} alt="PAYMENT QR" />}
