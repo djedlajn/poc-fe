@@ -5,7 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
-const URL = "http://10.197.12.84:4000";
+const URL = "http://localhost:4001";
 
 function App() {
   const [qr, setQr] = useState<any>(null);
